@@ -4,7 +4,6 @@ import com.deviennefou.devienne_fou_weekly_check.model.CharacterRaiderIo;
 import com.deviennefou.devienne_fou_weekly_check.model.MemberRaiderIo;
 import com.deviennefou.devienne_fou_weekly_check.service.DevienneFouService;
 import com.deviennefou.devienne_fou_weekly_check.service.RaiderIoService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Optional;
 
+import static com.deviennefou.devienne_fou_weekly_check.CharacterRaiderIoAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -28,12 +28,6 @@ public class RaiderIoServiceTest {
 
     @InjectMocks
     DevienneFouService devienneFouService;
-
-    List<MemberRaiderIo> dataMembersList;
-
-    @BeforeEach
-    void setUp() {
-    }
 
     @Test
     void retrieveInformationAboutGuildMembersReturnA200() {
@@ -68,16 +62,26 @@ public class RaiderIoServiceTest {
     @Test
     void retrieveInformationAboutAPlayerReturnA200() {
         String mockJson = createMockResponseGetProfile1Player200();
-        ResponseEntity<String> mockResponseEntity = new ResponseEntity<>(mockJson,HttpStatus.OK);
+        ResponseEntity<String> mockResponseEntity = new ResponseEntity<>(mockJson, HttpStatus.OK);
 
-        when(raiderIOService.getPlayerProfile(any(),any(),any())).thenReturn(mockResponseEntity);
+        when(raiderIOService.getPlayerProfile(any(), any(), any())).thenReturn(mockResponseEntity);
 
         Optional<CharacterRaiderIo> character = devienneFouService.getProfile("Moghiro");
 
-        assertThat(character).isPresent();
-        assertThat(character.get().name()).isEqualTo("Moghiro");
-        assertThat(character.get().race()).isEqualTo("Night Elf");
-        assertThat(character.get().wowClass()).isEqualTo("Druid");
+        //AssertJ Extracting
+        assertThat(character).isPresent()
+                .get()
+                .extracting(CharacterRaiderIo::name,
+                        CharacterRaiderIo::race,
+                        CharacterRaiderIo::wowClass)
+                        .containsExactly("Moghiro", "Night Elf", "Druid");
+
+        //Custom Assertion class generated with assertj plugin
+        assertThat(character.get())
+                .hasName("Moghiro")
+                .hasRace("Night Elf")
+                .hasWowClass("Druid");
+
         assertThat(character.get().mythic_plus_weekly_highest_level_runs()).isEmpty();
         assertThat(character.get().mythic_plus_previous_weekly_highest_level_runs()).isNotEmpty();
         assertThat(character.get().mythic_plus_previous_weekly_highest_level_runs()).hasSize(2);
