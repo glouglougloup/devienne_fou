@@ -9,6 +9,8 @@ public record CharacterRaiderIo(
         String race,
         @JsonProperty("class")
         String wowClass,
-        String profile_url) {
+        String profile_url,
+        MythicWeeklyHighestLevelRun[] mythic_plus_weekly_highest_level_runs,
+        MythicPreviousWeeklyHighestLevelRun[] mythic_plus_previous_weekly_highest_level_runs) {
 
 }

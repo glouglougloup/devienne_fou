@@ -2,7 +2,7 @@ package com.deviennefou.devienne_fou_weekly_check.model;
 
 import java.util.List;
 
-public record GuildResponse(
+public record GuildResponseRaiderIo(
         String name,
         String faction,
         String region,
