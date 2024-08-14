@@ -68,6 +68,16 @@
 					<argLine>-XX:+EnableDynamicAgentLoading</argLine>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.assertj</groupId>
+				<artifactId>assertj-assertions-generator-maven-plugin</artifactId>
+				<version>2.2.0</version>
+				<configuration>
+					<classes>
+						<param>com.deviennefou.weeklycheck.model.CharacterRaiderIo</param>
+					</classes>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

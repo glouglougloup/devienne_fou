@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check.model;
+package com.deviennefou.weeklycheck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,6 +9,8 @@ public record CharacterRaiderIo(
         String race,
         @JsonProperty("class")
         String wowClass,
-        String profile_url) {
+        String profile_url,
+        MythicWeeklyHighestLevelRun[] mythic_plus_weekly_highest_level_runs,
+        MythicPreviousWeeklyHighestLevelRun[] mythic_plus_previous_weekly_highest_level_runs) {
 
 }
