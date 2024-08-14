@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check.config;
+package com.deviennefou.weeklycheck.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

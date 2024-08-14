@@ -1,14 +1,16 @@
-package com.deviennefou.devienne_fou_weekly_check.service;
+package com.deviennefou.weeklycheck.service;
 
-import com.deviennefou.devienne_fou_weekly_check.model.CharacterRaiderIo;
-import com.deviennefou.devienne_fou_weekly_check.model.GuildResponseRaiderIo;
-import com.deviennefou.devienne_fou_weekly_check.model.MemberRaiderIo;
+import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
+import com.deviennefou.weeklycheck.model.GuildResponseRaiderIo;
+import com.deviennefou.weeklycheck.model.MemberRaiderIo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,8 +28,7 @@ public class DevienneFouService {
         ResponseEntity<String> responseEntityMembersRaiderIo = raiderIOService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou");
 
         if(responseEntityMembersRaiderIo.getStatusCode().is4xxClientError()){
-            log.error("400 response from RaiderIO API");
-            return Optional.empty();
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
         }
 
         String body = responseEntityMembersRaiderIo.getBody();
@@ -51,9 +52,7 @@ public class DevienneFouService {
         ResponseEntity<String> responseEntityMembersRaiderIo = raiderIOService.getPlayerProfile("eu", "Cho'gall", name);
 
         if(responseEntityMembersRaiderIo.getStatusCode().is4xxClientError()){
-            //TODO Implement ControllerAdvice for common error ?
-            log.error("400 response from RaiderIO API");
-            return Optional.empty();
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
         }
 
         String body = responseEntityMembersRaiderIo.getBody();

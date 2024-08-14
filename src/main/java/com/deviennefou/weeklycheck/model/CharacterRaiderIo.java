@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check.model;
+package com.deviennefou.weeklycheck.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

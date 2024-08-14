@@ -74,7 +74,7 @@
 				<version>2.2.0</version>
 				<configuration>
 					<classes>
-						<param>com.deviennefou.devienne_fou_weekly_check.model.CharacterRaiderIo</param>
+						<param>com.deviennefou.weeklycheck.model.CharacterRaiderIo</param>
 					</classes>
 				</configuration>
 			</plugin>

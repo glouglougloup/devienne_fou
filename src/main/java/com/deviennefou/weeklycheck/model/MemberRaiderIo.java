@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check.model;
+package com.deviennefou.weeklycheck.model;
 
 public record MemberRaiderIo(
         int rank,

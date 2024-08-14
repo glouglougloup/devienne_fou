@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check.service;
+package com.deviennefou.weeklycheck.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;

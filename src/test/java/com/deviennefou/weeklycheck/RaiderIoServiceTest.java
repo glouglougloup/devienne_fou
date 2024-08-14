@@ -1,9 +1,9 @@
-package com.deviennefou.devienne_fou_weekly_check;
+package com.deviennefou.weeklycheck;
 
-import com.deviennefou.devienne_fou_weekly_check.model.CharacterRaiderIo;
-import com.deviennefou.devienne_fou_weekly_check.model.MemberRaiderIo;
-import com.deviennefou.devienne_fou_weekly_check.service.DevienneFouService;
-import com.deviennefou.devienne_fou_weekly_check.service.RaiderIoService;
+import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
+import com.deviennefou.weeklycheck.model.MemberRaiderIo;
+import com.deviennefou.weeklycheck.service.DevienneFouService;
+import com.deviennefou.weeklycheck.service.RaiderIoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,12 +11,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
 import java.util.Optional;
 
-import static com.deviennefou.devienne_fou_weekly_check.CharacterRaiderIoAssert.assertThat;
+import static com.deviennefou.weeklycheck.CharacterRaiderIoAssert.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -52,9 +54,9 @@ public class RaiderIoServiceTest {
 
         when(raiderIOService.getMembersOfGuildFromRealmInRegion(any(), any(), any())).thenReturn(mockResponseEntity);
 
-        Optional<List<MemberRaiderIo>> membersList = devienneFouService.getMembersWithRanks(1);
-
-        assertThat(membersList).isEmpty();
+        assertThatThrownBy(() -> devienneFouService.getMembersWithRanks(1))
+                .isInstanceOf(HttpClientErrorException.class)
+                .hasMessage("400 response from RaiderIO API");
 
         verify(raiderIOService, times(1)).getMembersOfGuildFromRealmInRegion(any(), any(), eq("devienne fou"));
     }
@@ -85,6 +87,20 @@ public class RaiderIoServiceTest {
         assertThat(character.get().mythic_plus_weekly_highest_level_runs()).isEmpty();
         assertThat(character.get().mythic_plus_previous_weekly_highest_level_runs()).isNotEmpty();
         assertThat(character.get().mythic_plus_previous_weekly_highest_level_runs()).hasSize(2);
+
+        verify(raiderIOService, times(1)).getPlayerProfile(any(),any(),any());
+    }
+
+    @Test
+    void retrieveInformationAboutAPlayerReturnA400() {
+        String mockJson = createMockResponse400();
+        ResponseEntity<String> mockResponseEntity = new ResponseEntity<>(mockJson, HttpStatus.BAD_REQUEST);
+
+        when(raiderIOService.getPlayerProfile(any(), any(), any())).thenReturn(mockResponseEntity);
+
+        assertThatThrownBy(() -> devienneFouService.getProfile("Moghiro"))
+                .isInstanceOf(HttpClientErrorException.class)
+                .hasMessage("400 response from RaiderIO API");
 
         verify(raiderIOService, times(1)).getPlayerProfile(any(),any(),any());
     }

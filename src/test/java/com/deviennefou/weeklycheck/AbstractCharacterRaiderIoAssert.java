@@ -1,6 +1,6 @@
-package com.deviennefou.devienne_fou_weekly_check;
+package com.deviennefou.weeklycheck;
 
-import com.deviennefou.devienne_fou_weekly_check.model.CharacterRaiderIo;
+import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
 import org.assertj.core.api.AbstractObjectAssert;
 
 

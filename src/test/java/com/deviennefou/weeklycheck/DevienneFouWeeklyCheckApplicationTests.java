@@ -1,4 +1,4 @@
-package com.deviennefou.devienne_fou_weekly_check;
+package com.deviennefou.weeklycheck;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
