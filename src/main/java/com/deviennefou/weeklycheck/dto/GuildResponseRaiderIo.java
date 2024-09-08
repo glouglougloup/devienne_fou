@@ -1,4 +1,4 @@
-package com.deviennefou.weeklycheck.model;
+package com.deviennefou.weeklycheck.dto;
 
 import java.util.List;
 

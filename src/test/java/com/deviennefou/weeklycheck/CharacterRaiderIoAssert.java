@@ -1,16 +1,16 @@
 package com.deviennefou.weeklycheck;
 
-import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
+import com.deviennefou.weeklycheck.dto.ProfileCharacterRaiderIo;
 
 
-public class CharacterRaiderIoAssert extends AbstractCharacterRaiderIoAssert<CharacterRaiderIoAssert, CharacterRaiderIo> {
+public class CharacterRaiderIoAssert extends AbstractCharacterRaiderIoAssert<CharacterRaiderIoAssert, ProfileCharacterRaiderIo> {
 
-  public CharacterRaiderIoAssert(CharacterRaiderIo actual) {
+  public CharacterRaiderIoAssert(ProfileCharacterRaiderIo actual) {
     super(actual, CharacterRaiderIoAssert.class);
   }
 
   @org.assertj.core.util.CheckReturnValue
-  public static CharacterRaiderIoAssert assertThat(CharacterRaiderIo actual) {
+  public static CharacterRaiderIoAssert assertThat(ProfileCharacterRaiderIo actual) {
     return new CharacterRaiderIoAssert(actual);
   }
 

@@ -1,10 +1,10 @@
 package com.deviennefou.weeklycheck;
 
-import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
+import com.deviennefou.weeklycheck.dto.ProfileCharacterRaiderIo;
 import org.assertj.core.api.AbstractObjectAssert;
 
 
-public abstract class AbstractCharacterRaiderIoAssert<S extends AbstractCharacterRaiderIoAssert<S, A>, A extends CharacterRaiderIo> extends AbstractObjectAssert<S, A> {
+public abstract class AbstractCharacterRaiderIoAssert<S extends AbstractCharacterRaiderIoAssert<S, A>, A extends ProfileCharacterRaiderIo> extends AbstractObjectAssert<S, A> {
 
   /**
    * Creates a new <code>{@link AbstractCharacterRaiderIoAssert}</code> to make assertions on actual CharacterRaiderIo.
