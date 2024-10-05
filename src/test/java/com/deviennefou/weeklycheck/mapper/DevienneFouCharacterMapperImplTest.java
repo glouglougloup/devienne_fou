@@ -1,13 +1,11 @@
 package com.deviennefou.weeklycheck.mapper;
 
-import com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIo;
+import com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIoDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class DevienneFouCharacterMapperImplTest {
@@ -17,7 +15,7 @@ class DevienneFouCharacterMapperImplTest {
 
     @Test
     public void givenSourceToDestination_whenMaps_thenCorrect(){
-        MemberCharacterRaiderIo memberCharacterRaiderIo = new MemberCharacterRaiderIo(
+        MemberCharacterRaiderIoDTO memberCharacterRaiderIo = new MemberCharacterRaiderIoDTO(
                 "Moghiro",
                 "Night elf",
                 "druid",

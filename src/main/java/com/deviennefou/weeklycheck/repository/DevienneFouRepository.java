@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface DevienneFouRepository extends JpaRepository<DevienneFouCharacter, Long> {
 
     Optional<DevienneFouCharacter> findByRegionAndRealmAndName(String region, String realm, String name);
+
+    Optional<DevienneFouCharacter> findByName(String name);
 }

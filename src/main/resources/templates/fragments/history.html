@@ -1,0 +1,19 @@
+<!-- templates/fragments/history.html -->
+<html xmlns:th="http://www.thymeleaf.org">
+<table th:fragment="historyFragment">
+    <thead>
+    <tr>
+        <th>Week Start</th>
+        <th>Week Status</th>
+        <th>Recorded At</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="run : ${history}">
+        <td th:text="${run.weekStart}">Week Start</td>
+        <td th:text="${run.weekStatus}">Week Status</td>
+        <td th:text="${run.recordedAt}">Recorded At</td>
+    </tr>
+    </tbody>
+</table>
+</html>

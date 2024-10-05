@@ -12,4 +12,9 @@ public class DevienneFouDateUtils {
         LocalDate currentWeekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.WEDNESDAY));
         return Date.from(currentWeekStart.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
+
+    public static Date getWeekStart(LocalDate date){
+        LocalDate currentWeekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.WEDNESDAY));
+        return Date.from(currentWeekStart.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
 }

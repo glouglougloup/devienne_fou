@@ -105,7 +105,7 @@
 				<version>2.2.0</version>
 				<configuration>
 					<classes>
-						<param>com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIo</param>
+						<param>com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIoDTO</param>
 					</classes>
 				</configuration>
 			</plugin>

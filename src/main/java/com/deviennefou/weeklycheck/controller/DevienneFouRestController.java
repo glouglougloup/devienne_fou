@@ -1,14 +1,16 @@
 package com.deviennefou.weeklycheck.controller;
 
-import com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIo;
+import com.deviennefou.weeklycheck.dto.MemberDTO;
+import com.deviennefou.weeklycheck.dto.MythicPlusRunHistoryDTO;
 import com.deviennefou.weeklycheck.mapper.DevienneFouCharacterMapper;
-import com.deviennefou.weeklycheck.model.DevienneFouCharacter;
 import com.deviennefou.weeklycheck.service.DevienneFouService;
 import com.deviennefou.weeklycheck.service.RaiderIoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,12 +26,15 @@ public class DevienneFouRestController {
     private DevienneFouCharacterMapper devienneFouCharacterMapper;
 
     @GetMapping("/members")
-    public ResponseEntity<List<MemberCharacterRaiderIo>> getMembers() {
-        List<DevienneFouCharacter> members = devienneFouService.getMembers();
-        List<MemberCharacterRaiderIo> list = members.stream()
-                .map(character -> devienneFouCharacterMapper.toDevienneFouCharacterDto(character))
-                .toList();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<List<MemberDTO>> getMembers() {
+        return ResponseEntity.ok(devienneFouService.getMembers());
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<MythicPlusRunHistoryDTO>> getHistory(@RequestParam String playerName,
+                                                                    @RequestParam(required = false) @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate date) {
+        List<MythicPlusRunHistoryDTO> history = devienneFouService.getHistory(playerName,date);
+        return ResponseEntity.ok(history);
     }
 
     @PostMapping("/synchronize")
@@ -37,6 +42,13 @@ public class DevienneFouRestController {
         return ResponseEntity.ok(
                 devienneFouService.synchronizeDatabaseWithRaiderIoApi(
                         raiderIoService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"))
+        );
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deletePlayer(@RequestParam Long id){
+        return ResponseEntity.ok(
+                devienneFouService.deletePlayerById(id)
         );
     }
 }

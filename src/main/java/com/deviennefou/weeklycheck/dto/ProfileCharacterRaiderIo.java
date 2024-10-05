@@ -13,7 +13,9 @@ public record ProfileCharacterRaiderIo(
         String profileUrl,
         String region,
         String realm,
+        @JsonProperty("mythic_plus_weekly_highest_level_runs")
         MythicWeeklyHighestLevelRun[] mythicWeeklyHighestLevelRuns,
+        @JsonProperty("mythic_plus_previous_weekly_highest_level_runs")
         MythicPreviousWeeklyHighestLevelRun[] mythicPreviousWeeklyHighestLevelRuns){
 
 }

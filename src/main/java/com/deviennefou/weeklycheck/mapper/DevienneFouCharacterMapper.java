@@ -1,6 +1,6 @@
 package com.deviennefou.weeklycheck.mapper;
 
-import com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIo;
+import com.deviennefou.weeklycheck.dto.MemberCharacterRaiderIoDTO;
 import com.deviennefou.weeklycheck.dto.ProfileCharacterRaiderIo;
 import com.deviennefou.weeklycheck.model.DevienneFouCharacter;
 import com.deviennefou.weeklycheck.model.MythicPlusRunHistory;
@@ -15,8 +15,6 @@ public interface DevienneFouCharacterMapper {
 
     @Mapping(target = "runHistoryList", ignore = true)
     DevienneFouCharacter toDevienneFouCharacterEntity(ProfileCharacterRaiderIo memberRaiderIo);
-
-    MemberCharacterRaiderIo toDevienneFouCharacterDto(DevienneFouCharacter devienneFouCharacter);
 
     @AfterMapping
     default void calculateRunHistory(@MappingTarget DevienneFouCharacter entity, ProfileCharacterRaiderIo dto){
