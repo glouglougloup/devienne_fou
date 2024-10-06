@@ -88,7 +88,38 @@ public class DevienneFouService {
         return "Player with id " + id + " has been remove.";
     }
 
-    public String synchronizeDatabaseWithRaiderIoApi(ResponseEntity<String> membersOfGuildFromRealmInRegion) {
+    public String synchronizeDatabaseWithRaiderIoApi(){
+        List<DevienneFouCharacter> rosterList = devienneFouRepository.findAll();
+
+        rosterList
+                .forEach(character -> {
+                    Optional<ProfileCharacterRaiderIo> profile = getProfile(
+                            character.getRegion(),
+                            character.getRealm(),
+                            character.getName()
+                    );
+
+                    profile.map(profileCharacterRaiderIo -> {
+                        Optional<DevienneFouCharacter> existingPlayerOptional = devienneFouRepository.findByRegionAndRealmAndName(
+                                profileCharacterRaiderIo.region(),
+                                profileCharacterRaiderIo.realm(),
+                                profileCharacterRaiderIo.name()
+                        );
+
+                        if (existingPlayerOptional.isPresent()) {
+                            DevienneFouCharacter existingPlayer = existingPlayerOptional.get();
+                            calculateRunHistory(existingPlayer,profileCharacterRaiderIo,mythicPlusRunHistoryRepository);
+                            return existingPlayer;
+                        } else {
+                            return devienneFouCharacterMapper.toDevienneFouCharacterEntity(profileCharacterRaiderIo);
+                        }
+                    });
+                });
+
+        return "Synchronized " + rosterList.size() + " players in the DB";
+    }
+
+    public String fetchAndSynchronizeDatabaseWithRaiderIoApi(ResponseEntity<String> membersOfGuildFromRealmInRegion) {
         if(membersOfGuildFromRealmInRegion.getStatusCode().is4xxClientError()){
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
         }
@@ -139,7 +170,7 @@ public class DevienneFouService {
             throw new RuntimeException("Could not save members in the DB : " + e.getMessage());
         }
 
-        return "Saved " + rosterList.size() + " players in DB.";
+        return "Fetch and saved " + rosterList.size() + " players in DB.";
     }
 
     public Optional<ProfileCharacterRaiderIo> getProfile(String region, String realm, String name) {

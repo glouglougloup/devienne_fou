@@ -70,3 +70,11 @@ a:hover {
     background-color: red;
     color: white;
 }
+
+.member-name {
+    font-weight: bold;
+}
+
+.week-status {
+    text-align: center;
+}

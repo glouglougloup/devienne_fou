@@ -39,8 +39,13 @@ public class DevienneFouRestController {
 
     @PostMapping("/synchronize")
     public ResponseEntity<String> synchronizeWithRaiderApi() {
+        return ResponseEntity.ok(devienneFouService.synchronizeDatabaseWithRaiderIoApi());
+    }
+
+    @PostMapping("/fetchAndSynchronize")
+    public ResponseEntity<String> fetchAndSynchronizeWithRaiderApi() {
         return ResponseEntity.ok(
-                devienneFouService.synchronizeDatabaseWithRaiderIoApi(
+                devienneFouService.fetchAndSynchronizeDatabaseWithRaiderIoApi(
                         raiderIoService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"))
         );
     }
