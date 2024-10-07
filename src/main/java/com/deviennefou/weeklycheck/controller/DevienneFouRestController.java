@@ -25,6 +25,11 @@ public class DevienneFouRestController {
     @Autowired
     private DevienneFouCharacterMapper devienneFouCharacterMapper;
 
+    @GetMapping("/profileDB")
+    public ResponseEntity<String> getProfilePlayerFromDB(String region, String realm, String name){
+        return ResponseEntity.ok(devienneFouService.getProfile(region,realm,name).toString());
+    }
+
     @GetMapping("/members")
     public ResponseEntity<List<MemberDTO>> getMembers() {
         return ResponseEntity.ok(devienneFouService.getMembers());
@@ -36,6 +41,13 @@ public class DevienneFouRestController {
         List<MythicPlusRunHistoryDTO> history = devienneFouService.getHistory(playerName,date);
         return ResponseEntity.ok(history);
     }
+
+    @PostMapping("/synchronizePlayer")
+    public ResponseEntity<String> synchronizePlayer(@RequestParam(required = false) String playerName,
+                                                    @RequestParam(required = false) Long id) {
+        return ResponseEntity.ok(devienneFouService.synchronizePlayerDatabaseWithRaiderIoApi(playerName, id));
+    }
+
 
     @PostMapping("/synchronize")
     public ResponseEntity<String> synchronizeWithRaiderApi() {

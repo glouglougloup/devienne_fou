@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -48,19 +49,11 @@ public class DevienneFouService {
         ).toList();
     }
 
-    public List<DevienneFouCharacter> getMembers(String filter){
-        if(filter != null && !filter.isEmpty()){
-            return devienneFouRepository.findByName(filter).stream().filter(Objects::nonNull).toList();
-        }else{
-            return devienneFouRepository.findAll();
-        }
-    }
-
-    public List<MythicPlusRunHistoryDTO> getHistory(String playerName,LocalDate localDate){
+    public List<MythicPlusRunHistoryDTO> getHistory(String playerName, LocalDate localDate) {
         List<MythicPlusRunHistory> historyByPlayerName;
-        if(localDate == null){
+        if (localDate == null) {
             historyByPlayerName = mythicPlusRunHistoryRepository.findByPlayerName(playerName);
-        }else{
+        } else {
             historyByPlayerName = mythicPlusRunHistoryRepository.findByPlayerNameAndWeekStart(
                     playerName,
                     DevienneFouDateUtils.getWeekStart(localDate)
@@ -74,11 +67,11 @@ public class DevienneFouService {
                 .toList();
     }
 
-    public WeekStatus getCurrentWeekStatus(DevienneFouCharacter character, LocalDate localDate){
+    public WeekStatus getCurrentWeekStatus(DevienneFouCharacter character, LocalDate localDate) {
         Optional<MythicPlusRunHistory> byDevienneFouCharacterAndWeekStart = mythicPlusRunHistoryRepository.findByDevienneFouCharacterAndWeekStart(character, DevienneFouDateUtils.getWeekStart(localDate));
-        if(byDevienneFouCharacterAndWeekStart.isPresent()){
+        if (byDevienneFouCharacterAndWeekStart.isPresent()) {
             return byDevienneFouCharacterAndWeekStart.get().getWeekStatus();
-        }else{
+        } else {
             throw new IllegalArgumentException("There's not record at " + localDate + " for player " + character.getName());
         }
     }
@@ -88,7 +81,33 @@ public class DevienneFouService {
         return "Player with id " + id + " has been remove.";
     }
 
-    public String synchronizeDatabaseWithRaiderIoApi(){
+    public String synchronizePlayerDatabaseWithRaiderIoApi(String playerName, Long id) {
+        Optional<DevienneFouCharacter> player;
+
+        if (id != null) {
+            player = devienneFouRepository.findById(id);
+        } else if (playerName != null && !playerName.isEmpty()) {
+            player = devienneFouRepository.findByName(playerName);
+        } else {
+            throw new IllegalArgumentException("Both playerName and id cannot be null or empty");
+        }
+
+        player.map(character -> {
+            Optional<ProfileCharacterRaiderIo> profile = getProfile(character.getRegion(),
+                    character.getRealm(),
+                    character.getName());
+
+            profile.map(profileCharacterRaiderIo -> {
+                calculateRunHistory(character, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
+                return character;
+            });
+            return character;
+        }).orElseThrow(() -> new IllegalArgumentException("Could not find player with given name or id in the database"));
+
+        return "Synchronized player with id " + player.get().getId() + "/" + player.get().getName() + " in the DB";
+    }
+
+    public String synchronizeDatabaseWithRaiderIoApi() {
         List<DevienneFouCharacter> rosterList = devienneFouRepository.findAll();
 
         rosterList
@@ -108,7 +127,7 @@ public class DevienneFouService {
 
                         if (existingPlayerOptional.isPresent()) {
                             DevienneFouCharacter existingPlayer = existingPlayerOptional.get();
-                            calculateRunHistory(existingPlayer,profileCharacterRaiderIo,mythicPlusRunHistoryRepository);
+                            calculateRunHistory(existingPlayer, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
                             return existingPlayer;
                         } else {
                             return devienneFouCharacterMapper.toDevienneFouCharacterEntity(profileCharacterRaiderIo);
@@ -120,8 +139,8 @@ public class DevienneFouService {
     }
 
     public String fetchAndSynchronizeDatabaseWithRaiderIoApi(ResponseEntity<String> membersOfGuildFromRealmInRegion) {
-        if(membersOfGuildFromRealmInRegion.getStatusCode().is4xxClientError()){
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
+        if (membersOfGuildFromRealmInRegion.getStatusCode().is4xxClientError()) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "response from RaiderIO API");
         }
 
         String body = membersOfGuildFromRealmInRegion.getBody();
@@ -135,7 +154,7 @@ public class DevienneFouService {
             return "Could not map the responseEntity from raiderIO api to our model GuildResponseRaiderIo ";
         }
         List<MemberRaiderIo> memberRaiderIoList = guildResponseRaiderIo.members().stream().toList();
-        Set<Integer> validRanks = Set.of(1,3,4,5);
+        Set<Integer> validRanks = Set.of(1, 3, 4, 5);
         List<DevienneFouCharacter> rosterList = memberRaiderIoList.stream()
                 .filter(memberRaiderIo -> validRanks.contains(memberRaiderIo.rank()))
                 .map(memberRaiderIo -> {
@@ -154,7 +173,7 @@ public class DevienneFouService {
 
                         if (existingPlayerOptional.isPresent()) {
                             DevienneFouCharacter existingPlayer = existingPlayerOptional.get();
-                            calculateRunHistory(existingPlayer,profileCharacterRaiderIo,mythicPlusRunHistoryRepository);
+                            calculateRunHistory(existingPlayer, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
                             return existingPlayer;
                         } else {
                             return devienneFouCharacterMapper.toDevienneFouCharacterEntity(profileCharacterRaiderIo);
@@ -166,7 +185,7 @@ public class DevienneFouService {
 
         try {
             devienneFouRepository.saveAll(rosterList);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Could not save members in the DB : " + e.getMessage());
         }
 
@@ -178,7 +197,7 @@ public class DevienneFouService {
         ResponseEntity<String> responseEntityMembersRaiderIo;
         try {
             responseEntityMembersRaiderIo = raiderIOService.getPlayerProfile(region, realm, name);
-        } catch (HttpClientErrorException e) {
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.warn("RaiderIO API returned an error for player {}: {}", name, e.getStatusCode());
             return Optional.empty();
         }
@@ -198,7 +217,7 @@ public class DevienneFouService {
         return Optional.of(profileCharacterRaiderIo);
     }
 
-    static void calculateRunHistory(DevienneFouCharacter entity, ProfileCharacterRaiderIo dto, MythicPlusRunHistoryRepository mythicPlusRunHistoryRepository){
+    static void calculateRunHistory(DevienneFouCharacter entity, ProfileCharacterRaiderIo dto, MythicPlusRunHistoryRepository mythicPlusRunHistoryRepository) {
         int totalRuns = dto.mythicWeeklyHighestLevelRuns() != null ? dto.mythicWeeklyHighestLevelRuns().length : 0;
         int level10OrAboveRuns = 0;
 
@@ -223,12 +242,12 @@ public class DevienneFouService {
 
         Optional<MythicPlusRunHistory> existingRunHistory = mythicPlusRunHistoryRepository.findByDevienneFouCharacterAndWeekStart(entity, weekStart);
 
-        if (existingRunHistory.isPresent()){
+        if (existingRunHistory.isPresent()) {
             MythicPlusRunHistory history = existingRunHistory.get();
             history.setWeekStatus(weekStatus);
             history.setRecordedAt(new Date());
             mythicPlusRunHistoryRepository.save(history);
-        }else {
+        } else {
             MythicPlusRunHistory newHistory = MythicPlusRunHistory.builder()
                     .devienneFouCharacter(entity)
                     .weekStatus(weekStatus)
