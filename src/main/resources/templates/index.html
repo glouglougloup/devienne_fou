@@ -7,15 +7,13 @@
     <script src="https://unpkg.com/htmx.org@2.0.3"
             integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
             crossorigin="anonymous"></script>
-
 </head>
 <body>
 <h1>Members</h1>
 
 <!-- Filter Form -->
-<form th:action="@{/members}" method="get">
-    <input type="text" name="filter" placeholder="Filter by name"/>
-    <button type="submit">Filter</button>
+<form hx-get="/membersFront" hx-target="#member-table-body" hx-trigger="keyup changed delay:500ms" hx-swap="outerHTML">
+    <input type="text" name="filter" placeholder="Filter by name" />
 </form>
 
 <!-- Members Table -->
@@ -27,29 +25,8 @@
         <th>Actions</th>
     </tr>
     </thead>
-    <tbody>
-    <tr th:if="${#lists.isEmpty(members)}">
-        <td colspan="3">No members found</td>
-    </tr>
-    <tr th:each="member : ${members}">
-        <td th:text="${member.name}" style="font-weight: bold;">Member Name</td>
-        <td style="text-align: center;"
-            th:text="${member.weekStatus}"
-            th:classappend="${#strings.trim(member.weekStatus) == 'VALIDATED' ? 'validated' :
-                    (#strings.trim(member.weekStatus) == 'WARNING' ? 'warning' : 'bad')}">
-        </td>
-        <td>
-            <button
-                    th:id="'toggle-button-' + ${member.name}"
-                    th:attr="hx-get='/historyfront?playerName=' + ${member.name}, hx-target='#history-' + ${member.name}"
-                    hx-swap="innerHTML"
-                    hx-trigger="click"
-                    th:onclick="toggleHistory([[${member.name}]])">History
-            </button>
-        </td>
-        <td colspan="3" th:id="'history-' + ${member.name}" style="display:none">
-        </td>
-    </tr>
+    <tbody id="member-table-body" th:replace="~{fragments/memberTable :: member-table-body}">
+        <!-- Thymeleaf will replace this with the fragment content -->
     </tbody>
 </table>
 <script>

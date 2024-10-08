@@ -18,16 +18,23 @@ public class DevienneFouController {
     @Autowired
     DevienneFouService devienneFouService;
 
-
-
     @GetMapping({"/","/index"})
     public String getMembers(Model model){
         List<MemberDTO> members = devienneFouService.getMembers().stream().sorted(Comparator.comparing(MemberDTO::name)).toList();
         model.addAttribute("members", members);
-        return "indexv2"; // the name of your Thymeleaf template (without the extension)
+        return "index";
     }
 
-    @GetMapping("/historyfront")
+    @GetMapping("/membersFront")
+    public String getFilteredMembers(@RequestParam(required = false) String filter, Model model) {
+        List<MemberDTO> members = devienneFouService.getMembers().stream()
+                .filter(memberDTO -> memberDTO.name().toLowerCase().contains(filter.toLowerCase()))
+                .sorted(Comparator.comparing(MemberDTO::name)).toList();
+        model.addAttribute("members", members);
+        return "fragments/memberTable :: member-table-body";
+    }
+
+    @GetMapping("/historyFront")
     public String getHistory(@RequestParam String playerName, Model model) {
         List<MythicPlusRunHistoryDTO> history = devienneFouService.getHistory(playerName, null);
         model.addAttribute("history", history);
