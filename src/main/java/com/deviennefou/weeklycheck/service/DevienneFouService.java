@@ -1,37 +1,155 @@
 package com.deviennefou.weeklycheck.service;
 
-import com.deviennefou.weeklycheck.model.CharacterRaiderIo;
-import com.deviennefou.weeklycheck.model.GuildResponseRaiderIo;
-import com.deviennefou.weeklycheck.model.MemberRaiderIo;
+import com.deviennefou.weeklycheck.dto.*;
+import com.deviennefou.weeklycheck.mapper.DevienneFouCharacterMapper;
+import com.deviennefou.weeklycheck.model.DevienneFouCharacter;
+import com.deviennefou.weeklycheck.model.MythicPlusRunHistory;
+import com.deviennefou.weeklycheck.model.WeekStatus;
+import com.deviennefou.weeklycheck.repository.DevienneFouRepository;
+import com.deviennefou.weeklycheck.repository.MythicPlusRunHistoryRepository;
+import com.deviennefou.weeklycheck.utils.DevienneFouDateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.*;
 
 @Service
 public class DevienneFouService {
 
     private static final Logger log = LoggerFactory.getLogger(DevienneFouService.class);
+
     @Autowired
     RaiderIoService raiderIOService;
 
+    @Autowired
+    DevienneFouRepository devienneFouRepository;
 
-    public Optional<List<MemberRaiderIo>> getMembersWithRanks(int rank) {
-        ResponseEntity<String> responseEntityMembersRaiderIo = raiderIOService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou");
+    @Autowired
+    MythicPlusRunHistoryRepository mythicPlusRunHistoryRepository;
 
-        if(responseEntityMembersRaiderIo.getStatusCode().is4xxClientError()){
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
+    @Autowired
+    DevienneFouCharacterMapper devienneFouCharacterMapper;
+
+    public List<MemberDTO> getMembers() {
+        List<DevienneFouCharacter> members = devienneFouRepository.findAll();
+        return members.stream()
+                .filter(character -> getCurrentWeekStatus(character,LocalDate.now()) != WeekStatus.INVALID)
+                .map(
+                    character -> new MemberDTO(character.getName(),
+                            character.getRegion(),
+                            character.getRealm(),
+                            getCurrentWeekStatus(character, LocalDate.now())))
+                .toList();
+    }
+
+    public List<MythicPlusRunHistoryDTO> getHistory(String playerName, LocalDate localDate) {
+        List<MythicPlusRunHistory> historyByPlayerName;
+        if (localDate == null) {
+            historyByPlayerName = mythicPlusRunHistoryRepository.findByPlayerName(playerName);
+        } else {
+            historyByPlayerName = mythicPlusRunHistoryRepository.findByPlayerNameAndWeekStart(
+                    playerName,
+                    DevienneFouDateUtils.getWeekStart(localDate)
+            );
+        }
+        return historyByPlayerName.stream()
+                .filter(run -> run.getWeekStatus() != WeekStatus.INVALID)
+                .map(run -> new MythicPlusRunHistoryDTO(
+                        run.getWeekStart(),
+                        run.getWeekStatus().toString(),
+                        run.getRecordedAt()))
+                .toList();
+    }
+
+    public WeekStatus getCurrentWeekStatus(DevienneFouCharacter character, LocalDate localDate) {
+        Optional<MythicPlusRunHistory> byDevienneFouCharacterAndWeekStart = mythicPlusRunHistoryRepository.findByDevienneFouCharacterAndWeekStart(character, DevienneFouDateUtils.getWeekStart(localDate));
+        if (byDevienneFouCharacterAndWeekStart.isPresent()) {
+            return byDevienneFouCharacterAndWeekStart.get().getWeekStatus();
+        } else {
+//            throw new IllegalArgumentException("There's not record at " + localDate + " for player " + character.getName());
+            log.warn("There's not record at {} for player {}", localDate, character.getName());
+            return WeekStatus.INVALID;
+        }
+    }
+
+    public String deletePlayerById(Long id) {
+        devienneFouRepository.deleteById(id);
+        return "Player with id " + id + " has been remove.";
+    }
+
+    public String synchronizePlayerDatabaseWithRaiderIoApi(String playerName, Long id) {
+        Optional<DevienneFouCharacter> player;
+
+        if (id != null) {
+            player = devienneFouRepository.findById(id);
+        } else if (playerName != null && !playerName.isEmpty()) {
+            player = devienneFouRepository.findByName(playerName);
+        } else {
+            throw new IllegalArgumentException("Both playerName and id cannot be null or empty");
         }
 
-        String body = responseEntityMembersRaiderIo.getBody();
+        player.map(character -> {
+            Optional<ProfileCharacterRaiderIo> profile = getProfile(character.getRegion(),
+                    character.getRealm(),
+                    character.getName());
+
+            profile.map(profileCharacterRaiderIo -> {
+                calculateRunHistory(character, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
+                return character;
+            });
+            return character;
+        }).orElseThrow(() -> new IllegalArgumentException("Could not find player with given name or id in the database"));
+
+        return "Synchronized player with id " + player.get().getId() + "/" + player.get().getName() + " in the DB";
+    }
+
+    public String synchronizeDatabaseWithRaiderIoApi() {
+        List<DevienneFouCharacter> rosterList = devienneFouRepository.findAll();
+
+        rosterList
+                .forEach(character -> {
+                    Optional<ProfileCharacterRaiderIo> profile = getProfile(
+                            character.getRegion(),
+                            character.getRealm(),
+                            character.getName()
+                    );
+
+                    profile.map(profileCharacterRaiderIo -> {
+                        Optional<DevienneFouCharacter> existingPlayerOptional = devienneFouRepository.findByRegionAndRealmAndName(
+                                profileCharacterRaiderIo.region(),
+                                profileCharacterRaiderIo.realm(),
+                                profileCharacterRaiderIo.name()
+                        );
+
+                        if (existingPlayerOptional.isPresent()) {
+                            DevienneFouCharacter existingPlayer = existingPlayerOptional.get();
+                            calculateRunHistory(existingPlayer, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
+                            return existingPlayer;
+                        } else {
+                            return devienneFouCharacterMapper.toDevienneFouCharacterEntity(profileCharacterRaiderIo);
+                        }
+                    });
+                });
+
+        return "Synchronized " + rosterList.size() + " players in the DB";
+    }
+
+    public String fetchAndSynchronizeDatabaseWithRaiderIoApi(ResponseEntity<String> membersOfGuildFromRealmInRegion) {
+        if (membersOfGuildFromRealmInRegion.getStatusCode().is4xxClientError()) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "response from RaiderIO API");
+        }
+
+        String body = membersOfGuildFromRealmInRegion.getBody();
 
         ObjectMapper objectMapper = new ObjectMapper();
         GuildResponseRaiderIo guildResponseRaiderIo;
@@ -39,33 +157,117 @@ public class DevienneFouService {
             guildResponseRaiderIo = objectMapper.readValue(body, GuildResponseRaiderIo.class);
         } catch (IOException e) {
             log.error("Could not map the responseEntity from raiderIO api to our model GuildResponseRaiderIo ", e);
-            return Optional.empty();
+            return "Could not map the responseEntity from raiderIO api to our model GuildResponseRaiderIo ";
         }
-        List<MemberRaiderIo> filteredMembers = guildResponseRaiderIo.members().stream()
-                .filter(member -> member.rank() == rank)
+        List<MemberRaiderIo> memberRaiderIoList = guildResponseRaiderIo.members().stream().toList();
+        Set<Integer> validRanks = Set.of(1, 3, 4, 5);
+        List<DevienneFouCharacter> rosterList = memberRaiderIoList.stream()
+                .filter(memberRaiderIo -> validRanks.contains(memberRaiderIo.rank()))
+                .map(memberRaiderIo -> {
+                    Optional<ProfileCharacterRaiderIo> profile = getProfile(
+                            memberRaiderIo.character().region(),
+                            memberRaiderIo.character().realm(),
+                            memberRaiderIo.character().name()
+                    );
+
+                    return profile.map(profileCharacterRaiderIo -> {
+                        Optional<DevienneFouCharacter> existingPlayerOptional = devienneFouRepository.findByRegionAndRealmAndName(
+                                profileCharacterRaiderIo.region(),
+                                profileCharacterRaiderIo.realm(),
+                                profileCharacterRaiderIo.name()
+                        );
+
+                        if (existingPlayerOptional.isPresent()) {
+                            DevienneFouCharacter existingPlayer = existingPlayerOptional.get();
+                            calculateRunHistory(existingPlayer, profileCharacterRaiderIo, mythicPlusRunHistoryRepository);
+                            return existingPlayer;
+                        } else {
+                            return devienneFouCharacterMapper.toDevienneFouCharacterEntity(profileCharacterRaiderIo);
+                        }
+                    }).orElse(null);
+                })
+                .filter(Objects::nonNull)
                 .toList();
 
-        return Optional.of(filteredMembers);
+        try {
+            devienneFouRepository.saveAll(rosterList);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not save members in the DB : " + e.getMessage());
+        }
+
+        return "Fetch and saved " + rosterList.size() + " players in DB.";
     }
 
-    public Optional<CharacterRaiderIo> getProfile(String name){
-        ResponseEntity<String> responseEntityMembersRaiderIo = raiderIOService.getPlayerProfile("eu", "Cho'gall", name);
+    public Optional<ProfileCharacterRaiderIo> getProfile(String region, String realm, String name) {
 
-        if(responseEntityMembersRaiderIo.getStatusCode().is4xxClientError()){
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,"response from RaiderIO API");
+        ResponseEntity<String> responseEntityMembersRaiderIo;
+        try {
+            responseEntityMembersRaiderIo = raiderIOService.getPlayerProfile(region, realm, name);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            log.warn("RaiderIO API returned an error for player {}: {}", name, e.getStatusCode());
+            return Optional.empty();
         }
+
 
         String body = responseEntityMembersRaiderIo.getBody();
 
         ObjectMapper objectMapper = new ObjectMapper();
-        CharacterRaiderIo characterRaiderIo;
+        ProfileCharacterRaiderIo profileCharacterRaiderIo;
         try {
-            characterRaiderIo = objectMapper.readValue(body, CharacterRaiderIo.class);
+            profileCharacterRaiderIo = objectMapper.readValue(body, ProfileCharacterRaiderIo.class);
         } catch (IOException e) {
-            log.error("Could not map the responseEntity from raiderIO api to our model CharacterRaiderIo ", e);
+            log.error("Could not map the responseEntity from raiderIO api to our model ProfileCharacterRaiderIo ", e);
             return Optional.empty();
         }
 
-        return Optional.of(characterRaiderIo);
+        return Optional.of(profileCharacterRaiderIo);
+    }
+
+    static void calculateRunHistory(DevienneFouCharacter entity, ProfileCharacterRaiderIo dto, MythicPlusRunHistoryRepository mythicPlusRunHistoryRepository) {
+        int totalRuns = dto.mythicWeeklyHighestLevelRuns() != null ? dto.mythicWeeklyHighestLevelRuns().length : 0;
+        int level10OrAboveRuns = 0;
+
+        if (dto.mythicWeeklyHighestLevelRuns() != null) {
+            level10OrAboveRuns = Math.toIntExact(
+                    Arrays.stream(dto.mythicWeeklyHighestLevelRuns())
+                            .filter(run -> run.mythic_level() >= 10)
+                            .count()
+            );
+        }
+
+        WeekStatus weekStatus;
+        if (totalRuns < 4) {
+            weekStatus = WeekStatus.BAD;
+        } else if (level10OrAboveRuns >= 4) {
+            weekStatus = WeekStatus.VALIDATED;
+        } else {
+            weekStatus = WeekStatus.WARNING;
+        }
+
+        Date weekStart = DevienneFouDateUtils.getWeekStart();
+
+        Optional<MythicPlusRunHistory> existingRunHistory = mythicPlusRunHistoryRepository.findByDevienneFouCharacterAndWeekStart(entity, weekStart);
+
+        if (existingRunHistory.isPresent()) {
+            MythicPlusRunHistory history = existingRunHistory.get();
+            history.setWeekStatus(weekStatus);
+            history.setRecordedAt(new Date());
+            mythicPlusRunHistoryRepository.save(history);
+        } else {
+            MythicPlusRunHistory newHistory = MythicPlusRunHistory.builder()
+                    .devienneFouCharacter(entity)
+                    .weekStatus(weekStatus)
+                    .recordedAt(new Date())
+                    .weekStart(weekStart)
+                    .build();
+
+            mythicPlusRunHistoryRepository.save(newHistory);
+        }
+    }
+
+    @Scheduled(cron = "0 55 23 * * *", zone = "Europe/Paris")
+    public void syncedWithRaiderIoApi(){
+        String numberOfPlayerSynced = fetchAndSynchronizeDatabaseWithRaiderIoApi(raiderIOService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"));
+        log.info("{} at {}", numberOfPlayerSynced, LocalDate.now());
     }
 }

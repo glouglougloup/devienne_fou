@@ -1,0 +1,21 @@
+<!-- templates/fragments/history.html -->
+<table th:fragment="historyFragment">
+    <thead>
+    <tr>
+        <th>Week Start</th>
+        <th>Week Status</th>
+        <th>Recorded At</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="run : ${history}">
+        <td th:text="${run.weekStart}">Week Start</td>
+        <td style="text-align: center;"
+            th:text="${run.weekStatus}"
+            th:classappend="${#strings.trim(run.weekStatus) == 'VALIDATED' ? 'validated' :
+            (#strings.trim(run.weekStatus) == 'WARNING' ? 'warning' : 'bad')}">Week Status</td>
+        <td th:text="${run.recordedAt}">Recorded At</td>
+    </tr>
+    </tbody>
+</table>
+</html>

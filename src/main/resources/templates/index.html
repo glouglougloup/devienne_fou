@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Devienne Fou - Member List</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script src="https://unpkg.com/htmx.org@2.0.3"
+            integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>Members</h1>
+
+<!-- Filter Form -->
+<form hx-get="/membersFront" hx-target="#member-table-body" hx-trigger="keyup changed delay:500ms" hx-swap="outerHTML">
+    <input type="text" name="filter" placeholder="Filter by name" />
+</form>
+
+<div>
+    <button
+        hx-post="/synchronizeFront"
+        hx-target="#member-table-body"
+        hx-trigger="click"
+        hx-swap="outerHTML"
+        hx-indicator="#spinner"
+        class="sync-button">Synchronize All Members
+    </button>
+    <img id="spinner" class="htmx-indicator" th:src="@{spinner.svg}" alt="Loading...">
+</div>
+
+<!-- Members Table -->
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Week Status</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="member-table-body" th:replace="~{fragments/memberTable :: member-table-body}">
+        <!-- Thymeleaf will replace this with the fragment content -->
+    </tbody>
+</table>
+<script>
+    function toggleHistory(memberName) {
+        const row = document.getElementById('history-' + memberName);
+        const button = document.getElementById('toggle-button-' + memberName);
+
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row'; // Show row
+            button.innerText = 'Hide History'; // Change button text
+        } else {
+            row.style.display = 'none'; // Hide row
+            button.innerText = 'History'; // Change button text back
+        }
+    }
+</script>
+</body>
+</html>
