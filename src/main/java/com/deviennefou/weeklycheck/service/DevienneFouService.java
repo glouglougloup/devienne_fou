@@ -265,7 +265,7 @@ public class DevienneFouService {
         }
     }
 
-    @Scheduled(cron = "55 23 * * *")
+    @Scheduled(cron = "0 55 23 * * *", zone = "Europe/Paris")
     public void syncedWithRaiderIoApi(){
         String numberOfPlayerSynced = fetchAndSynchronizeDatabaseWithRaiderIoApi(raiderIOService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"));
         log.info("{} at {}", numberOfPlayerSynced, LocalDate.now());
