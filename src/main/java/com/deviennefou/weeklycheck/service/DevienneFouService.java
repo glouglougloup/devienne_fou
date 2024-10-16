@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -41,12 +42,14 @@ public class DevienneFouService {
 
     public List<MemberDTO> getMembers() {
         List<DevienneFouCharacter> members = devienneFouRepository.findAll();
-        return members.stream().map(
-                character -> new MemberDTO(character.getName(),
-                        character.getRegion(),
-                        character.getRealm(),
-                        getCurrentWeekStatus(character, LocalDate.now()))
-        ).toList();
+        return members.stream()
+                .filter(character -> getCurrentWeekStatus(character,LocalDate.now()) != WeekStatus.INVALID)
+                .map(
+                    character -> new MemberDTO(character.getName(),
+                            character.getRegion(),
+                            character.getRealm(),
+                            getCurrentWeekStatus(character, LocalDate.now())))
+                .toList();
     }
 
     public List<MythicPlusRunHistoryDTO> getHistory(String playerName, LocalDate localDate) {
@@ -60,6 +63,7 @@ public class DevienneFouService {
             );
         }
         return historyByPlayerName.stream()
+                .filter(run -> run.getWeekStatus() != WeekStatus.INVALID)
                 .map(run -> new MythicPlusRunHistoryDTO(
                         run.getWeekStart(),
                         run.getWeekStatus().toString(),
@@ -72,7 +76,9 @@ public class DevienneFouService {
         if (byDevienneFouCharacterAndWeekStart.isPresent()) {
             return byDevienneFouCharacterAndWeekStart.get().getWeekStatus();
         } else {
-            throw new IllegalArgumentException("There's not record at " + localDate + " for player " + character.getName());
+//            throw new IllegalArgumentException("There's not record at " + localDate + " for player " + character.getName());
+            log.warn("There's not record at {} for player {}", localDate, character.getName());
+            return WeekStatus.INVALID;
         }
     }
 
@@ -259,5 +265,9 @@ public class DevienneFouService {
         }
     }
 
-
+    @Scheduled(cron = "55 23 * * *")
+    public void syncedWithRaiderIoApi(){
+        String numberOfPlayerSynced = fetchAndSynchronizeDatabaseWithRaiderIoApi(raiderIOService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"));
+        log.info("{} at {}", numberOfPlayerSynced, LocalDate.now());
+    }
 }

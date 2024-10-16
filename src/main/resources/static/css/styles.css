@@ -32,6 +32,7 @@ button {
     color: white;
     border: none;
     cursor: pointer;
+    width: 100px;
 }
 
 button:hover {
@@ -77,4 +78,23 @@ a:hover {
 
 .week-status {
     text-align: center;
+}
+
+.synchronize {
+    background-color: #b700ff;
+}
+
+.synchronize:hover{
+    background-color :#8202b5
+}
+
+.htmx-indicator{
+    opacity:0;
+    transition: opacity 500ms ease-in;
+}
+.htmx-request .htmx-indicator{
+    opacity:1;
+}
+.htmx-request.htmx-indicator{
+    opacity:1;
 }

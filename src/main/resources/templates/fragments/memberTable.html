@@ -17,6 +17,16 @@
                     hx-swap="innerHTML"
                     hx-trigger="click"
                     th:onclick="toggleHistory([[${member.name}]])">History</button>
+            <div>
+                <button
+                        th:attr="hx-post='/synchronizePlayerFront?playerName=' + ${member.name}, hx-target='#history-' + ${member.name}, hx-indicator='#spinner-' + ${member.name}"
+                        hx-swap="innerHTML"
+                        hx-trigger="click"
+                        class="synchronize"
+                        >Synchronize
+                </button>
+                <img th:id="'spinner-' + ${member.name}" class="htmx-indicator" th:src="@{spinner.svg}" alt="Loading...">
+            </div>
         </td>
         <td colspan="3" th:id="'history-' + ${member.name}" style="display:none">
         </td>

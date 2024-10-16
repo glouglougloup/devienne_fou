@@ -54,12 +54,16 @@ public class DevienneFouRestController {
         return ResponseEntity.ok(devienneFouService.synchronizeDatabaseWithRaiderIoApi());
     }
 
+    @PostMapping("/synchronizeDummy")
+    public ResponseEntity<String> synchronizeDummy() throws InterruptedException {
+        Thread.sleep(10000);
+        return ResponseEntity.ok("Players updated");
+    }
+
     @PostMapping("/fetchAndSynchronize")
     public ResponseEntity<String> fetchAndSynchronizeWithRaiderApi() {
-        return ResponseEntity.ok(
-                devienneFouService.fetchAndSynchronizeDatabaseWithRaiderIoApi(
-                        raiderIoService.getMembersOfGuildFromRealmInRegion("eu", "Cho'gall", "devienne fou"))
-        );
+        devienneFouService.syncedWithRaiderIoApi();
+        return ResponseEntity.ok("Synced task executed successfully");
     }
 
     @DeleteMapping("/delete")

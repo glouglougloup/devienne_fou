@@ -16,6 +16,18 @@
     <input type="text" name="filter" placeholder="Filter by name" />
 </form>
 
+<div>
+    <button
+        hx-post="/synchronizeFront"
+        hx-target="#member-table-body"
+        hx-trigger="click"
+        hx-swap="outerHTML"
+        hx-indicator="#spinner"
+        class="sync-button">Synchronize All Members
+    </button>
+    <img id="spinner" class="htmx-indicator" th:src="@{spinner.svg}" alt="Loading...">
+</div>
+
 <!-- Members Table -->
 <table>
     <thead>

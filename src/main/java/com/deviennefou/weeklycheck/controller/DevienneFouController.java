@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Comparator;
@@ -38,7 +39,25 @@ public class DevienneFouController {
     public String getHistory(@RequestParam String playerName, Model model) {
         List<MythicPlusRunHistoryDTO> history = devienneFouService.getHistory(playerName, null);
         model.addAttribute("history", history);
-        return "fragments/history :: historyFragment"; // Return the Thymeleaf fragment
+        return "fragments/history :: historyFragment";
+    }
+
+    @PostMapping("/synchronizeFront")
+    public String synchronizeDB(Model model) {
+        devienneFouService.synchronizeDatabaseWithRaiderIoApi();
+        List<MemberDTO> members = devienneFouService.getMembers().stream().sorted(Comparator.comparing(MemberDTO::name)).toList();
+        model.addAttribute("members", members);
+        return "fragments/memberTable :: member-table-body";
+    }
+
+    @PostMapping("/synchronizePlayerFront")
+    public String synchronizePlayer(@RequestParam(required = false) String playerName,
+                                    @RequestParam(required = false) Long id,
+                                    Model model) {
+        devienneFouService.synchronizePlayerDatabaseWithRaiderIoApi(playerName, id);
+        List<MythicPlusRunHistoryDTO> history = devienneFouService.getHistory(playerName, null);
+        model.addAttribute("history", history);
+        return "fragments/history :: historyFragment";
     }
 
 }
