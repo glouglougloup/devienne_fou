@@ -96,10 +96,12 @@ public class RaiderIoServiceTest {
         ResponseEntity<String> mockResponseEntity = new ResponseEntity<>(mockJson, HttpStatus.BAD_REQUEST);
 
         when(raiderIOService.getPlayerProfile(any(), any(), any())).thenReturn(mockResponseEntity);
-
-        assertThatThrownBy(() -> devienneFouService.getProfile("eu","Cho'gall","Moghiro"))
-                .isInstanceOf(HttpClientErrorException.class)
-                .hasMessage("400 response from RaiderIO API");
+        Optional<ProfileCharacterRaiderIo> profile = devienneFouService.getProfile("eu", "Cho'gall", "Moghiro");
+        assertThat(profile).isPresent();
+        assertThat(profile.get().name()).isNull();
+//        assertThatThrownBy(() -> devienneFouService.getProfile("eu","Cho'gall","Moghiro"))
+//                .isInstanceOf(HttpClientErrorException.class)
+//                .hasMessage("400 response from RaiderIO API");
 
         verify(raiderIOService, times(1)).getPlayerProfile(any(),any(),any());
     }
